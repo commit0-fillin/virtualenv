@@ -8,37 +8,42 @@ class AppDataDisabled(AppData):
     can_update = False
 
     def __init__(self) -> None:
-        pass
+        """Initialize the AppDataDisabled instance."""
+        super().__init__()
     error = RuntimeError('no app data folder available, probably no write access to the folder')
 
     def close(self):
-        """Do nothing."""
-        pass
+        """Do nothing as there's no app data to close."""
+        return
 
     def reset(self):
-        """Do nothing."""
-        pass
+        """Do nothing as there's no app data to reset."""
+        return
 
     @contextmanager
     def locked(self, path):
-        """Do nothing."""
-        pass
+        """
+        Do nothing as there's no locking mechanism needed.
+        
+        This is a context manager that yields control and then returns.
+        """
+        yield
 
     def py_info_clear(self):
-        """Nothing to clear."""
-        pass
+        """Do nothing as there's no Python info to clear."""
+        return
 
 class ContentStoreNA(ContentStore):
 
     def read(self):
-        """Nothing to read."""
-        pass
+        """Return None as there's nothing to read."""
+        return None
 
     def write(self, content):
-        """Nothing to write."""
-        pass
+        """Do nothing as there's nowhere to write."""
+        return
 
     def remove(self):
-        """Nothing to remove."""
-        pass
+        """Do nothing as there's nothing to remove."""
+        return
 __all__ = ['AppDataDisabled', 'ContentStoreNA']
