@@ -30,4 +30,32 @@ class PyPy(ViaGlobalRefVirtualenvBuiltin, abc.ABC):
     @classmethod
     def exe_stem(cls):
         return "pypy3"
+
+    def create(self):
+        super().create()
+        self._setup_pypy_specific()
+
+    def _setup_pypy_specific(self):
+        # Create bin/Scripts directory
+        self.bin_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copy PyPy executable
+        pypy_exe = self.interpreter.executable
+        dest_exe = self.bin_dir / (pypy_exe.name if self.interpreter.platform == "win32" else "pypy3")
+        self.copy_file(pypy_exe, dest=dest_exe, symlink=False)
+
+        # Create symlinks/copies for python executables
+        self._create_python_executables()
+
+    def _create_python_executables(self):
+        pypy_exe = self.bin_dir / (f"pypy3.exe" if self.interpreter.platform == "win32" else "pypy3")
+        python_exe = self.bin_dir / ("python.exe" if self.interpreter.platform == "win32" else "python")
+        python3_exe = self.bin_dir / (f"python3.exe" if self.interpreter.platform == "win32" else "python3")
+
+        if self.interpreter.platform == "win32":
+            self.copy_file(pypy_exe, dest=python_exe, symlink=False)
+            self.copy_file(pypy_exe, dest=python3_exe, symlink=False)
+        else:
+            python_exe.symlink_to(pypy_exe.name)
+            python3_exe.symlink_to(pypy_exe.name)
 __all__ = ['PyPy']
