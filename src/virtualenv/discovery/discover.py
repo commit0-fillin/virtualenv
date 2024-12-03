@@ -11,7 +11,12 @@ class Discover(ABC):
 
         :param parser: the CLI parser
         """
-        pass
+        parser.add_argument(
+            "--python",
+            dest="python",
+            metavar="py",
+            help="interpreter based on which new virtual environment will be created",
+        )
 
     def __init__(self, options) -> None:
         """
@@ -30,10 +35,22 @@ class Discover(ABC):
 
         :return: the interpreter ready to use for virtual environment creation
         """
-        pass
+        if self._env.get("VIRTUAL_ENV"):
+            raise RuntimeError("Cannot run virtualenv from within a virtual environment")
+
+        python_path = self._env.get("VIRTUALENV_PYTHON") or self._env.get("PYTHON")
+        if python_path:
+            self._interpreter = self._get_interpreter_from_path(python_path)
+        else:
+            self._interpreter = self._discover_system_interpreter()
+
+        self._has_run = True
+        return self._interpreter
 
     @property
     def interpreter(self):
         """:return: the interpreter as returned by :meth:`run`, cached"""
-        pass
+        if not self._has_run:
+            self.run()
+        return self._interpreter
 __all__ = ['Discover']
