@@ -48,12 +48,16 @@ class AppDataDiskFolder(AppData):
         return str(self.lock.path)
 
     def close(self):
-        """Do nothing."""
-        pass
+        """Close the file lock."""
+        self.lock.release()
 
     def py_info_clear(self):
-        """clear py info."""
-        pass
+        """Clear Python interpreter information."""
+        py_info_folder = self.lock.path / "py"
+        if py_info_folder.exists():
+            for file in py_info_folder.iterdir():
+                if file.is_file() and file.suffix in ('.json', '.lock'):
+                    safe_delete(file)
 
 class JSONStoreDisk(ContentStore, ABC):
 
