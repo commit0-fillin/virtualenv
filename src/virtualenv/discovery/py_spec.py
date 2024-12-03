@@ -18,11 +18,38 @@ class PythonSpec:
 
     def generate_re(self, *, windows: bool) -> re.Pattern:
         """Generate a regular expression for matching against a filename."""
-        pass
+        impl = self.implementation or r'[a-zA-Z]+'
+        version = rf'{self.major or r"\d+"}\.{self.minor or r"\d+"}\.{self.micro or r"\d+"}'
+        arch = rf'(32|64)' if self.architecture is None else str(self.architecture)
+        
+        if windows:
+            pattern = rf'{impl}-{version}(-{arch})?\.exe'
+        else:
+            pattern = rf'{impl}{version}'
+        
+        return re.compile(pattern, re.IGNORECASE)
 
     def satisfies(self, spec):
         """Called when there's a candidate metadata spec to see if compatible - e.g. PEP-514 on Windows."""
-        pass
+        if self.implementation and spec.implementation and self.implementation.lower() != spec.implementation.lower():
+            return False
+        
+        if self.major is not None and spec.major is not None and self.major != spec.major:
+            return False
+        
+        if self.minor is not None and spec.minor is not None and self.minor != spec.minor:
+            return False
+        
+        if self.micro is not None and spec.micro is not None and self.micro != spec.micro:
+            return False
+        
+        if self.architecture is not None and spec.architecture is not None and self.architecture != spec.architecture:
+            return False
+        
+        if self.path is not None and spec.path is not None and self.path != spec.path:
+            return False
+        
+        return True
 
     def __repr__(self) -> str:
         name = type(self).__name__
