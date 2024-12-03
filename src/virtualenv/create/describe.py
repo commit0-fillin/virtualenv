@@ -19,12 +19,12 @@ class Describe:
     @classmethod
     def can_describe(cls, interpreter):
         """Knows means it knows how the output will look."""
-        pass
+        return True  # Assuming this class can describe any interpreter
 
     @classmethod
     def exe_stem(cls):
         """Executable name without suffix - there seems to be no standard way to get this without creating it."""
-        pass
+        return 'python'  # Assuming the default executable name is 'python'
 
 class Python3Supports(Describe, ABC):
     pass
