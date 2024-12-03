@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+import shutil
 from abc import ABC, abstractmethod
 from argparse import ArgumentTypeError
 from ast import literal_eval
@@ -71,22 +72,53 @@ class Creator(ABC):
         parser.add_argument('--no-vcs-ignore', action='store_true', help='Don\'t create VCS ignore files')
         parser.add_argument('--system-site-packages', action='store_true', help='Give the virtual environment access to the system site-packages dir')
 
-    @abstractmethod
     def create(self):
         """Perform the virtual environment creation."""
-        if self.dest.exists() and self.clear:
-            safe_delete(self.dest)
+        try:
+            if self.dest.exists() and self.clear:
+                safe_delete(self.dest)
+            
+            self.dest.mkdir(parents=True, exist_ok=True)
+            
+            self.create_configuration()
+            self.setup_python()
+            self.setup_scripts()
+            
+            if not self.no_vcs_ignore:
+                self.setup_ignore_vcs()
+            
+            return self.dest
+        except Exception as e:
+            logging.error(f"Error creating virtual environment: {str(e)}")
+            raise
+
+    def create_configuration(self):
+        """Create the pyvenv.cfg configuration file."""
+        config = {
+            'home': str(self.interpreter.system_prefix),
+            'implementation': self.interpreter.implementation,
+            'version_info': '.'.join(map(str, self.interpreter.version_info)),
+            'virtualenv': __version__,
+        }
         
-        self.dest.mkdir(parents=True, exist_ok=True)
-        
-        self.create_configuration()
-        self.setup_python()
-        self.setup_scripts()
-        
-        if not self.no_vcs_ignore:
-            self.setup_ignore_vcs()
-        
-        return self.dest
+        if self.system_site_packages:
+            config['include-system-site-packages'] = 'true'
+        else:
+            config['include-system-site-packages'] = 'false'
+
+        with open(self.dest / 'pyvenv.cfg', 'w') as f:
+            for key, value in config.items():
+                f.write(f'{key} = {value}\n')
+
+    def setup_python(self):
+        """Set up the Python interpreter in the virtual environment."""
+        # This method should be implemented in subclasses
+        pass
+
+    def setup_scripts(self):
+        """Set up scripts (like activate) in the virtual environment."""
+        # This method should be implemented in subclasses
+        pass
 
     @classmethod
     def validate_dest(cls, raw_value):
