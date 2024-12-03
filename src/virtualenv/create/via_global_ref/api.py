@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import os
+import textwrap
 from abc import ABC
 from pathlib import Path
 from virtualenv.create.creator import Creator, CreatorMeta
@@ -24,5 +25,26 @@ class ViaGlobalRefApi(Creator, ABC):
 
     def env_patch_text(self):
         """Patch the distutils package to not be derailed by its configuration files."""
-        pass
+        return textwrap.dedent(
+            """
+            import os
+            import sys
+            import re
+            
+            def _patch_dist():
+                # we cannot allow the distutils configuration files to screw us up
+                import distutils.dist
+                old_parse_config_files = distutils.dist.Distribution.parse_config_files
+            
+                def _parse_config_files(self, filenames=None):
+                    if filenames is None:
+                        filenames = self.find_config_files()
+                    # We don't want to process any config files from the base system
+                    return old_parse_config_files(self, [])
+            
+                distutils.dist.Distribution.parse_config_files = _parse_config_files
+            
+            _patch_dist()
+            """
+        )
 __all__ = ['ViaGlobalRefApi', 'ViaGlobalRefMeta']
