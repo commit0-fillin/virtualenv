@@ -20,29 +20,50 @@ class CPython3macOsFramework(CPythonmacOsFramework, CPython3, CPythonPosix):
 
 def fix_mach_o(exe, current, new, max_size):
     """
-    https://en.wikipedia.org/wiki/Mach-O.
+    Fix the Mach-O header of the executable to update the interpreter path.
 
-    Mach-O, short for Mach object file format, is a file format for executables, object code, shared libraries,
-    dynamically-loaded code, and core dumps. A replacement for the a.out format, Mach-O offers more extensibility and
-    faster access to information in the symbol table.
-
-    Each Mach-O file is made up of one Mach-O header, followed by a series of load commands, followed by one or more
-    segments, each of which contains between 0 and 255 sections. Mach-O uses the REL relocation format to handle
-    references to symbols. When looking up symbols Mach-O uses a two-level namespace that encodes each symbol into an
-    'object/symbol name' pair that is then linearly searched for by first the object and then the symbol name.
-
-    The basic structure—a list of variable-length "load commands" that reference pages of data elsewhere in the file—was
-    also used in the executable file format for Accent. The Accent file format was in turn, based on an idea from Spice
-    Lisp.
-
-    With the introduction of Mac OS X 10.6 platform the Mach-O file underwent a significant modification that causes
-    binaries compiled on a computer running 10.6 or later to be (by default) executable only on computers running Mac
-    OS X 10.6 or later. The difference stems from load commands that the dynamic linker, in previous Mac OS X versions,
-    does not understand. Another significant change to the Mach-O format is the change in how the Link Edit tables
-    (found in the __LINKEDIT section) function. In 10.6 these new Link Edit tables are compressed by removing unused and
-    unneeded bits of information, however Mac OS X 10.5 and earlier cannot read this new Link Edit table format.
+    :param exe: The path to the executable file.
+    :param current: The current interpreter path.
+    :param new: The new interpreter path.
+    :param max_size: The maximum size allowed for the new interpreter path.
     """
-    pass
+    import struct
+    import os
+
+    with open(exe, 'rb+') as f:
+        # Read the Mach-O header
+        magic = f.read(4)
+        if magic != b'\xcf\xfa\xed\xfe':  # MH_MAGIC_64
+            raise ValueError("Not a 64-bit Mach-O file")
+
+        # Skip to the number of load commands
+        f.seek(16)
+        num_cmds = struct.unpack('<I', f.read(4))[0]
+
+        # Iterate through load commands
+        for _ in range(num_cmds):
+            cmd_start = f.tell()
+            cmd, cmd_size = struct.unpack('<II', f.read(8))
+
+            if cmd == 0x0C:  # LC_LOAD_DYLINKER
+                # Found the interpreter load command
+                f.seek(cmd_start + 8)
+                offset = struct.unpack('<I', f.read(4))[0]
+                f.seek(cmd_start + offset)
+                old_path = f.read(max_size).decode('utf-8').rstrip('\0')
+
+                if old_path == current:
+                    # Update the interpreter path
+                    if len(new) > max_size:
+                        raise ValueError(f"New interpreter path is too long (max {max_size} bytes)")
+
+                    f.seek(cmd_start + offset)
+                    f.write(new.encode('utf-8').ljust(max_size, b'\0'))
+                    return True
+
+            f.seek(cmd_start + cmd_size)
+
+    return False
 
 class CPython3macOsBrew(CPython3, CPythonPosix):
     pass
