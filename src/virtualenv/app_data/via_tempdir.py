@@ -13,6 +13,10 @@ class TempAppData(AppDataDiskFolder):
         logging.debug('created temporary app data folder %s', self.lock.path)
 
     def reset(self):
-        """This is a temporary folder, is already empty to start with."""
-        pass
+        """
+        Reset the temporary folder by deleting its contents and recreating it.
+        """
+        safe_delete(self.lock.path)
+        self.lock.path.mkdir(parents=True, exist_ok=True)
+        logging.debug('reset temporary app data folder %s', self.lock.path)
 __all__ = ['TempAppData']
