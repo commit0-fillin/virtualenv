@@ -37,4 +37,23 @@ class ViaGlobalRefVirtualenvBuiltin(ViaGlobalRefApi, VirtualenvBuiltin, ABC):
         
         if py_version.major == 3 and py_version.minor >= 4:
             self.pyvenv_cfg["base-executable"] = self.interpreter.system_executable
+
+    def create(self):
+        """Create the virtual environment."""
+        ensure_dir(self.dest)
+        self.set_pyenv_cfg()
+        self._create_python()
+        self._setup_scripts()
+        return self.dest
+
+    def _create_python(self):
+        """Create the Python executable in the virtual environment."""
+        exe_path = ExePathRefToDest(self.interpreter.system_executable, self.dest, self.interpreter)
+        exe_path.run(RefMust.COPY, RefWhen.ANY)
+
+    def _setup_scripts(self):
+        """Set up scripts in the virtual environment."""
+        # This method would typically create or copy necessary scripts
+        # Implementation depends on specific requirements
+        pass
 __all__ = ['BuiltinViaGlobalRefMeta', 'ViaGlobalRefVirtualenvBuiltin']
