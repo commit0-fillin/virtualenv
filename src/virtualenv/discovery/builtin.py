@@ -26,7 +26,7 @@ class Builtin(Discover):
 
     def __repr__(self) -> str:
         spec = self.python_spec[0] if len(self.python_spec) == 1 else self.python_spec
-        return f'{self.__class__.__name__} discover of python_spec={spec!r}'
+        return f'{self.__class__.__name__}(python_spec={spec!r}, app_data={self.app_data!r}, try_first_with={self.try_first_with!r})'
 
 class LazyPathDump:
 
@@ -51,7 +51,18 @@ class LazyPathDump:
 
 def path_exe_finder(spec: PythonSpec) -> Callable[[Path], Generator[tuple[Path, bool], None, None]]:
     """Given a spec, return a function that can be called on a path to find all matching files in it."""
-    pass
+    def finder(path: Path) -> Generator[tuple[Path, bool], None, None]:
+        if not path.exists():
+            return
+
+        pattern = spec.generate_re(windows=sys.platform.startswith('win'))
+        for item in path.iterdir():
+            if item.is_file() and pattern.match(item.name):
+                yield item, True
+            elif item.is_dir():
+                yield item, False
+
+    return finder
 
 class PathPythonInfo(PythonInfo):
     """python info from path."""
