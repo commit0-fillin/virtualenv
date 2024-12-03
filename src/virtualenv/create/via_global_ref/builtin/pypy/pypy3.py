@@ -151,9 +151,26 @@ class Pypy3Windows(PyPy3, WindowsSupports):
         return self.bin_dir / f"pypy{self.interpreter.version_info[0]}.exe"
 
     def symlinks(self):
-        yield self.exe, "python.exe"
-        yield self.exe, f"python{self.interpreter.version_info[0]}.exe"
-        yield self.exe, f"python{self.interpreter.version_info[0]}{self.interpreter.version_info[1]}.exe"
+        executables = self.executables_for_win_pypy_less_v37()
+        if executables:
+            for exe in executables:
+                yield exe, exe.name
+        else:
+            yield self.exe, "python.exe"
+            yield self.exe, f"python{self.interpreter.version_info[0]}.exe"
+            yield self.exe, f"python{self.interpreter.version_info[0]}{self.interpreter.version_info[1]}.exe"
+
+    def executables_for_win_pypy_less_v37(self):
+        """
+        PyPy <= 3.6 (v7.3.3) for Windows contains only pypy3.exe and pypy3w.exe
+        This method handles the non-existing exe sources for older PyPy versions.
+        """
+        if self.interpreter.version_info[:2] <= (3, 6):
+            return [
+                self.bin_dir / "pypy3.exe",
+                self.bin_dir / "pypy3w.exe"
+            ]
+        return super().executables()
 
     def _create_activate_scripts(self):
         activate_bat = self.bin_dir / "activate.bat"
