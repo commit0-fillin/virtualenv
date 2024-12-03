@@ -12,6 +12,8 @@ class ReadOnlyAppData(AppDataDiskFolder):
             raise RuntimeError(msg)
         super().__init__(folder)
         self.lock = NoOpFileLock(folder)
+        self.folder = folder
+        self.py_info_store = _PyInfoStoreDiskReadOnly(os.path.join(folder, 'py'))
 
 class _PyInfoStoreDiskReadOnly(PyInfoStoreDisk):
     pass
