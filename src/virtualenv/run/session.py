@@ -16,27 +16,27 @@ class Session:
     @property
     def verbosity(self):
         """The verbosity of the run."""
-        pass
+        return self._verbosity
 
     @property
     def interpreter(self):
         """Create a virtual environment based on this reference interpreter."""
-        pass
+        return self._interpreter
 
     @property
     def creator(self):
         """The creator used to build the virtual environment (must be compatible with the interpreter)."""
-        pass
+        return self._creator
 
     @property
     def seeder(self):
         """The mechanism used to provide the seed packages (pip, setuptools, wheel)."""
-        pass
+        return self._seeder
 
     @property
     def activators(self):
         """Activators used to generate activations scripts."""
-        pass
+        return self._activators
 
     def __enter__(self):
         return self
